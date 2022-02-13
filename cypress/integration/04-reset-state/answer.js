@@ -44,7 +44,7 @@ describe('reset data using cy.writeFile', () => {
   })
 })
 
-describe('reset data using a task', () => {
+describe('reset data using cy.task', () => {
   beforeEach(() => {
     cy.task('resetData')
     cy.visit('/')

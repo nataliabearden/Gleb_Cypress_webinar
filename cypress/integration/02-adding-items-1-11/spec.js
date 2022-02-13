@@ -1,7 +1,16 @@
 /// <reference types="cypress" />
+// @ts-check
+
+beforeEach( () => {
+  cy.visit('/')
+})
+
+import {addItem} from "./utils"
+import {addNItems} from "./utils"
+
+
 it('loads', () => {
   // application should be running at port 3000
-  cy.visit('localhost:3000')
   cy.contains('h1', 'todos')
 })
 
@@ -11,26 +20,43 @@ it('loads', () => {
 
 it('adds two items', () => {
   // repeat twice
-  //    get the input field
-  //    type text and "enter"
+    addItem('First todo')
+    addItem('Second todo')
   //    assert that the new Todo item
   //    has been added added to the list
+        cy.get('li.todo').should('have.length', 2)
   // cy.get(...).should('have.length', 2)
 })
 
 it('can mark an item as completed', () => {
   // adds a few items
-  // marks the first item as completed
+  addItem('First todo')
+  addItem('Second todo')
+  // marks first todo completed
+  cy.get('li.todo')
+    .first().find('.toggle').click()
   // confirms the first item has the expected completed class
+  cy.get('li.todo')
+    .first().should('have.class', 'todo completed')
   // confirms the other items are still incomplete
+  cy.get('li.todo')
+  .eq(1).should('not.have.class', 'todo completed')
 })
 
 it('can delete an item', () => {
-  // adds a few items
-  // deletes the first item
+  addItem('First todo')
+  addItem('Second todo')
+  cy.get('li.todo').should('have.length', 2)
   // use force: true because we don't want to hover
+  cy.get('li.todo').first().find('button.destroy').click({force: true})
   // confirm the deleted item is gone from the dom
+  cy.contains('li.todo', 'first todo').should('not.exist')
   // confirm the other item still exists
+  cy.contains('li.todo', 'Second todo')
+  cy.get('li.todo').should('have.length', 1)
+  // single todo persists on page reload
+  cy.reload()
+  cy.get('li.todo').should('have.length', 1)
 })
 
 it('can add many items', () => {
@@ -38,8 +64,27 @@ it('can add many items', () => {
   for (let k = 0; k < N; k += 1) {
     // add an item
     // probably want to have a reusable function to add an item!
+    addItem((k+1)) // !need to troubleshoot, adds 'todo $k'
+    // if using ${k+1} - error 'k is not a modifier'
+
   }
   // check number of items
+  cy.get('li.todo').should('have.length', N)
+})
+
+it.only('uses util.js file to add N items', () => {
+  cy.pause()
+  addNItems(3)
+  cy.viewport('samsung-note9')
+})
+
+it('uses experimentalStudio to record and playback', () => {
+/* ==== Generated with Cypress Studio ==== */
+cy.get('.new-todo').clear();
+cy.get('.new-todo').type('1{enter}2{enter}3{enter}');
+/* ==== End Cypress Studio ==== */
+cy.get('li.todo').should('have.length', 3)
+
 })
 
 it('adds item with random text', () => {

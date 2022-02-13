@@ -9,9 +9,17 @@
 
 /* eslint-disable no-unused-vars */
 
-it('starts with zero items (waits)', () => {
+it('starts with zero items (waits)', () => { // expected to fail if todo's present
+  cy.request('POST', './reset', {todos: []})
+  cy.intercept('GET', '/todos') // intercept the network call that GETs todo's
+    .as('loading') // use alias (~variable) to reference later
+  
+  // .visit only AFTER .intercept is set up to avoid a race condition
   cy.visit('/')
   // wait 1 second
+  // cy.wait(1000)
+  cy.wait('@loading') // wait ONLY until the GET is completed
+    .its('response.body').should('deep.equal', '') // asserting on the Response body
   // then check the number of items
   cy.get('li.todo').should('have.length', 0)
 })
@@ -28,17 +36,32 @@ it('starts with zero items', () => {
   cy.get('li.todo').should('have.length', 0)
 })
 
-it('starts with zero items (stubbed response)', () => {
-  // start Cypress network server
-  // stub `GET /todos` with []
-  // save the stub as an alias
+it.only('starts with zero items (stubbed response)', () => {
+  cy.request('POST', './reset', {todos: []}) // clean up
+  
+  // cy.intercept('GET', '/todos', []) // intercept GET /todos and stub with empty todo's
+  cy.intercept('GET', '/todos', {// intercept GET /todos
+      fixture: 'two-items.json' // and stub with fixture file
+    }).as('loading') // save the stub as an alias
 
-  // THEN visit the page
-  cy.visit('/')
+  cy.visit('/') // THEN visit the page
+  cy.wait('@loading') // wait for the route alias
+  .its('response.body') // grab its response body
+  // .should('deep.equal', '') // and make sure the body is an empty list
+  cy.get('li.todo').should('have.length', 2)
 
-  // wait for the route alias
-  // grab its response body
-  // and make sure the body is an empty list
+  cy.intercept('POST', '/todos').as('newTodo')
+  cy.get('.new-todo').type('one more{enter}')
+  cy.wait('@newTodo')
+    .its('request.body')
+    .should( $body => {
+      expect($body).to.deep.include({
+        title: 'one more',
+        completed: false,
+      })
+      expect($body).to.have.property('id')
+    })
+  // cy.get('li.todo').should('have.length', 2)
 })
 
 it('starts with zero items (fixture)', () => {
